@@ -56,10 +56,11 @@
 					col = float4(density*2/densityCoef - 1, 2 - density*2/densityCoef, 0, 1);
 				}else if(density >0){
 					col = float4(0, density*2/densityCoef, 1 - density*2/densityCoef, 1);
+					//col = density * col + (1-density) * float4(1, 1, 1, 1);
 				}else{
 					col = float4(1, 1, 1, 1);
 				}
-				col.a = 1;
+				//col.a = 1;
 				return col;
 			}
 			ENDCG

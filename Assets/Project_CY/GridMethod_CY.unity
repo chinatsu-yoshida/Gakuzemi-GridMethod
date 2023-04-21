@@ -431,7 +431,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   computeShader: {fileID: 7200000, guid: 34fb804198c15464a98f2854c04b881e, type: 3}
-  diff: 10
-  densityCoef: 50
+  diff: 6
+  densityCoef: 15.9
+  deltaX: 0.0001
+  deltaY: 0.001
   lod: 0
   sourceTex: {fileID: 0}

@@ -10,6 +10,8 @@
 float diff;             //拡散係数
 float dt;               //デルタタイム
 float densityCoef;      //密度場外圧係数
+float deltaX;
+float deltaY;
 
 RWTexture2D<float>	density; //density field, 密度場
 RWTexture2D<float> prev; //1ステップ前のバッファ保存, prev density field.
@@ -57,18 +59,21 @@ void DiffuseDensity(uint2 id : SV_DispatchThreadID)
         // 格子が正方形だと成り立つ式な気がする Δx = 1/w, Δy = 1/h
         float a = dt * diff * w * h;
 
-        // // ガウスザイデル
-        // [unroll] // コンパイル後のコードの記述の違い
-        // for (int k = 0; k < GS_ITERATE; k++) {
-        //     density[id] = (prev[id] + a * (density[int2(id.x - 1, id.y)] + density[int2(id.x + 1, id.y)] + density[int2(id.x, id.y - 1)] + density[int2(id.x, id.y + 1)])) / (1 + 4 * a);
-        //     SetBoundaryDensity(id, w, h);
-        // }
+        // ガウスザイデル
+        [unroll] // コンパイル後のコードの記述の違い
+        for (int k = 0; k < GS_ITERATE; k++) {
+            density[id] = (prev[id] + a * (density[int2(id.x - 1, id.y)] + density[int2(id.x + 1, id.y)] + density[int2(id.x, id.y - 1)] + density[int2(id.x, id.y + 1)])) / (1 + 4 * a);
+            SetBoundaryDensity(id, w, h);
+        }
 
         // 中央差分
-        density[id] = prev[id] 
-                     + dt*diff*w*w*(density[int2(id.x - 1, id.y)] + density[int2(id.x + 1, id.y)] - 2*prev[id])/10000
-                     + dt*diff*h*h*(density[int2(id.x, id.y - 1)] + density[int2(id.x, id.y + 1)] - 2*prev[id])/10000;
-        SetBoundaryDensity(id, w, h);
+        // dt*diff/(Δx*Δx) < 1/4 を満たすようにdt, diff, Δx, Δy の値を設定しないといけない
+        // float powDeltaX = deltaY * deltaY;
+        // float powDeltaY = deltaX * deltaX;
+        // density[id] = prev[id] 
+        //              + dt*diff/powDeltaX * (density[int2(id.x - 1, id.y)] + density[int2(id.x + 1, id.y)] - 2*prev[id])
+        //              + dt*diff/powDeltaY * (density[int2(id.x, id.y - 1)] + density[int2(id.x, id.y + 1)] - 2*prev[id]);
+        // SetBoundaryDensity(id, w, h);
 
         prev[id] = density[id];
     }

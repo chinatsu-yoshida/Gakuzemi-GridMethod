@@ -41,26 +41,29 @@ namespace GridMethod_CY
         {
             AddSourceDensity,
             DiffuseDensity,
-            //SwapDensity,
-
-            //Draw
         }
 
         protected Dictionary<ComputeKernels, int> kernelMap = new Dictionary<ComputeKernels, int>();
         protected GPUThreads gpuThreads;
         protected RenderTexture densityTex;
         protected RenderTexture prevTex;
-        protected int densityId, prevId, sourceId, diffId, dtId, densityCoefId, densityTexId;
+        protected int densityId, prevId, sourceId, diffId, dtId, densityCoefId, densityTexId, deltaXId, deltaYId;
         protected int width, height;
 
         [SerializeField]
         protected ComputeShader computeShader;
 
-        [SerializeField]
+        [SerializeField, Range(0.1f, 100f)]
         protected float diff;
 
-        [SerializeField]
-        protected float densityCoef;
+        [SerializeField, Range(0.1f, 200f)]
+        protected float densityCoef = 10f;
+
+        [SerializeField, Range(0.0001f, 10f)]
+        protected float deltaX = 0.001f;
+
+        [SerializeField, Range(0.001f, 10f)]
+        protected float deltaY = 0.001f;
 
         [SerializeField]
         protected int lod = 0;
@@ -86,6 +89,8 @@ namespace GridMethod_CY
             computeShader.SetFloat(diffId, diff);
             computeShader.SetFloat(dtId, Time.deltaTime);
             computeShader.SetFloat(densityCoefId, densityCoef);
+            computeShader.SetFloat(deltaXId, deltaX);
+            computeShader.SetFloat(deltaYId, deltaY);
 
             DensityStep();
 
@@ -127,6 +132,8 @@ namespace GridMethod_CY
             diffId     = Shader.PropertyToID("diff");
             dtId       = Shader.PropertyToID("dt");
             densityCoefId  = Shader.PropertyToID("densityCoef");
+            deltaXId  = Shader.PropertyToID("deltaX");
+            deltaYId  = Shader.PropertyToID("deltaY");
 
             InitializeComputeShader();
         }
