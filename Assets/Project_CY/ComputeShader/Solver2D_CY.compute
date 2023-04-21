@@ -1,0 +1,75 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel AddSourceDensity
+#pragma kernel DiffuseDensity
+
+#define THREAD_X 32
+#define THREAD_Y 32
+#define THREAD_Z 1
+#define GS_ITERATE 2 //Gauss-Seidel法の反復回数. パフォーマンスに直結します.素早い拡散が必要なければ低い値で.
+
+float diff;             //拡散係数
+float dt;               //デルタタイム
+float densityCoef;      //密度場外圧係数
+
+RWTexture2D<float>	density; //density field, 密度場
+RWTexture2D<float> prev; //1ステップ前のバッファ保存, prev density field.
+Texture2D source; //density の重み, 外力入力バッファ
+
+void SetBoundaryDensity(uint2 id, uint w, uint h)
+{
+    density[id] = (id.x == 0) ? density[id + uint2(1,0)] : density[id];
+    density[id] = (id.x == w-1) ? density[uint2(w-2, id.y)] : density[id];
+    density[id] = (id.y == 0) ? density[id + uint2(0,1)] : density[id];
+    density[id] = (id.y == h-1) ? density[uint2(id.x, h-2)] : density[id];
+
+    density[id] = (id.x == 0 && id.y == 0) ? 0.5 * (density[uint2(1,0)] + density[uint2(0,1)]) : density[id];
+    density[id] = (id.x == 0 && id.y == h-1) ? 0.5 * (density[uint2(1,h-1)] + density[uint2(0,h-2)]) : density[id];
+    density[id] = (id.x == w-1 && id.y == 0) ? 0.5 * (density[uint2(w-2,0)] + density[uint2(w-1,1)]) : density[id];
+    density[id] = (id.x == w-1 && id.y == h-1) ? 0.5 * (density[uint2(w-2,h-1)] + density[uint2(w-1,h-2)]) : density[id];
+}
+
+//密度場外力項.
+[numthreads(THREAD_X, THREAD_Y, THREAD_Z)]
+void AddSourceDensity(uint2 id : SV_DispatchThreadID)
+{
+    uint w, h;
+    density.GetDimensions(w, h);    //密度場
+
+    if (id.x < w && id.y < h)
+    {
+        // densityCoef : マウスを1秒間押し続けたとき円の中心に加えられるdensityの値
+        // source : 重み，円の中心に近いほど1に近い値
+        density[id] += source[id] * densityCoef * dt;
+        // あってる？
+        prev[id] = density[id];//float3(prev[id].xy, density[id]);//source[id].z * densityCoef * dt);
+    }
+}
+
+//密度場拡散項.diff∇･∇densによる勾配・発散をGauss-Seidel法にて計算。diffは拡散係数.
+[numthreads(THREAD_X, THREAD_Y, THREAD_Z)]
+void DiffuseDensity(uint2 id : SV_DispatchThreadID)
+{
+    uint w, h;
+    density.GetDimensions(w, h);
+
+    if (id.x < w && id.y < h)
+    {
+        // 格子が正方形だと成り立つ式な気がする Δx = 1/w, Δy = 1/h
+        float a = dt * diff * w * h;
+
+        // // ガウスザイデル
+        // [unroll] // コンパイル後のコードの記述の違い
+        // for (int k = 0; k < GS_ITERATE; k++) {
+        //     density[id] = (prev[id] + a * (density[int2(id.x - 1, id.y)] + density[int2(id.x + 1, id.y)] + density[int2(id.x, id.y - 1)] + density[int2(id.x, id.y + 1)])) / (1 + 4 * a);
+        //     SetBoundaryDensity(id, w, h);
+        // }
+
+        // 中央差分
+        density[id] = prev[id] 
+                     + dt*diff*w*w*(density[int2(id.x - 1, id.y)] + density[int2(id.x + 1, id.y)] - 2*prev[id])/10000
+                     + dt*diff*h*h*(density[int2(id.x, id.y - 1)] + density[int2(id.x, id.y + 1)] - 2*prev[id])/10000;
+        SetBoundaryDensity(id, w, h);
+
+        prev[id] = density[id];
+    }
+}
