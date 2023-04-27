@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using UnityEngine;
 using UnityEngine.Assertions;
 using UnityEngine.Rendering;
@@ -53,17 +54,20 @@ namespace GridMethod_CY
         [SerializeField]
         protected ComputeShader computeShader;
 
-        [SerializeField, Range(0.1f, 100f)]
+        [SerializeField, Range(0.1f, 500f)]
         protected float diff;
 
         [SerializeField, Range(0.1f, 200f)]
         protected float densityCoef = 10f;
 
-        [SerializeField, Range(0.0001f, 10f)]
+        [SerializeField, Range(0.001f, 10f)]
         protected float deltaX = 0.001f;
 
         [SerializeField, Range(0.001f, 10f)]
         protected float deltaY = 0.001f;
+
+        [SerializeField]
+        protected int iteration = 10;
 
         [SerializeField]
         protected int lod = 0;
@@ -85,14 +89,19 @@ namespace GridMethod_CY
         void Update()
         {
             if (width != Screen.width || height != Screen.height) InitializeComputeShader();
-            
+
+            UnityEngine.Debug.Log(Time.deltaTime);
+
             computeShader.SetFloat(diffId, diff);
-            computeShader.SetFloat(dtId, Time.deltaTime);
+            computeShader.SetFloat(dtId, 0.01f);// Time.deltaTime);
             computeShader.SetFloat(densityCoefId, densityCoef);
             computeShader.SetFloat(deltaXId, deltaX);
             computeShader.SetFloat(deltaYId, deltaY);
 
-            DensityStep();
+            for (int i = 0; i < iteration; i++)
+            {
+                DensityStep();
+            }
 
             // •`‰æ‚ÉŠÖ‚·‚éˆ—
             // Sample.Shader ‚ÌDensityTex‚ÉƒZƒbƒg

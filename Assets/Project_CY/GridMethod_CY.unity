@@ -169,7 +169,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   addSourceMat: {fileID: 2100000, guid: 0e1ec73c0fa4ec740b52d0c647bfc054, type: 2}
   SB: {fileID: 1868564687}
-  sourceRadius: 0.03
+  sourceRadius: 0.07
   addSourceTex: {fileID: 0}
   OnSourceUpdated:
     m_PersistentCalls:
@@ -431,9 +431,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   computeShader: {fileID: 7200000, guid: 34fb804198c15464a98f2854c04b881e, type: 3}
-  diff: 6
-  densityCoef: 15.9
-  deltaX: 0.0001
-  deltaY: 0.001
+  diff: 500
+  densityCoef: 3
+  deltaX: 5
+  deltaY: 5
+  iteration: 3
   lod: 0
   sourceTex: {fileID: 0}

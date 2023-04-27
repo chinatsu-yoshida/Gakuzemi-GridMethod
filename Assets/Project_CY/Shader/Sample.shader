@@ -54,7 +54,7 @@
 					col = float4(1, 0, 0, 1);
 				}else if(density >= densityCoef / 2){
 					col = float4(density*2/densityCoef - 1, 2 - density*2/densityCoef, 0, 1);
-				}else if(density >0){
+				}else if(density > 0.1f){
 					col = float4(0, density*2/densityCoef, 1 - density*2/densityCoef, 1);
 					//col = density * col + (1-density) * float4(1, 1, 1, 1);
 				}else{
